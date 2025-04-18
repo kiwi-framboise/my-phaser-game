@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>Mofutan Game</title>
-  <!-- Phaser CDN（Phaser 3本体） -->
+  <!-- Phaser 3本体をCDNから読み込み -->
   <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js"></script>
   <style>
     body { margin: 0; padding: 0; }
@@ -14,11 +14,11 @@
   <div id="game-container"></div>
 
   <script>
-    // Phaserゲーム全体の設定
+    // Phaserゲームの基本設定
     const config = {
       type: Phaser.AUTO,
-      width: 800,
-      height: 600,
+      width: 800,     // ゲーム画面の論理サイズ(幅)
+      height: 600,    // ゲーム画面の論理サイズ(高さ)
       parent: 'game-container',
       scene: {
         preload: preload,
@@ -27,38 +27,72 @@
       }
     };
 
-    // ゲームインスタンスを作成
+    // ゲームインスタンス生成
     const game = new Phaser.Game(config);
 
-    let mofutanSprite;    // キャラクター用
-    let dialogText;       // 会話テキスト用
-    let dialogVisible = false; // テキストが表示中かどうか
+    // 変数の宣言
+    let mofutanSprite;
+    let dialogText;
+    let dialogVisible = false;
 
-    //========================
-    //  1) 画像を読み込む
-    //========================
+    //=======================
+    // 1. アセットの読み込み
+    //=======================
     function preload() {
-      // 'mofutan' = キー名, 'assets/mofutan.png' = 実際のパス
+      // "mofutan" = 画像のキー, "assets/mofutan.png" = 実際のファイルパス
       this.load.image('mofutan', 'assets/mofutan.png');
     }
 
-    //===================================
-    // 2) create()：シーンが生成される
-    //===================================
+    //=======================
+    // 2. シーンの生成
+    //=======================
     function create() {
-      // 背景色 (お好みで変更可能)
+      // 背景色を設定
       this.cameras.main.setBackgroundColor('#fceacd');
 
-      // キャラを中央に配置し、スケールを少し小さく
-      mofutanSprite = this.add.image(400, 300, 'mofutan').setScale(0.8);
+      //-----------------------------------
+      // (A) mofutan画像を一旦(0,0)に配置
+      //-----------------------------------
+      mofutanSprite = this.add.image(0, 0, 'mofutan');
+      // 左上を原点にしたければ: .setOrigin(0,0)  
+      // 今回は画像を中央で回転させたいのでデフォルト(0.5,0.5)のままでもOKですが、
+      // 「自動スケール後に中央寄せ」するには一旦(0,0)配置のほうが計算しやすい。
+      mofutanSprite.setOrigin(0,0);
 
-      // クリック(タップ)判定をONにする
+      //-----------------------------------
+      // (B) 画像サイズを取得して自動スケール計算
+      //-----------------------------------
+      const imageWidth = mofutanSprite.width;
+      const imageHeight = mofutanSprite.height;
+      const gameWidth = this.sys.game.config.width;   // 800
+      const gameHeight = this.sys.game.config.height; // 600
+
+      // 画面内に収めるためのスケール倍率を計算(縦横どちらかに合わせる)
+      const scaleX = gameWidth / imageWidth;
+      const scaleY = gameHeight / imageHeight;
+      const finalScale = Math.min(scaleX, scaleY); // どちらか小さいほう
+
+      mofutanSprite.setScale(finalScale);
+
+      // 表示後の「実際の描画サイズ」を取得
+      // ( setScale() 後の幅高さは displayWidth, displayHeight )
+      const displayedWidth = mofutanSprite.displayWidth;
+      const displayedHeight = mofutanSprite.displayHeight;
+
+      //-----------------------------------
+      // (C) 画面中央に配置し直す
+      //-----------------------------------
+      const offsetX = (gameWidth - displayedWidth) / 2;
+      const offsetY = (gameHeight - displayedHeight) / 2;
+      mofutanSprite.setPosition(offsetX, offsetY);
+
+      // クリックイベントを受け付けるように
       mofutanSprite.setInteractive();
 
-      //====================================
-      // 会話テキスト(最初は非表示)
-      //====================================
-      dialogText = this.add.text(100, 500, '', {
+      //-----------------------------------
+      // (D) 会話テキストを用意(最初は非表示)
+      //-----------------------------------
+      dialogText = this.add.text(20, 20, '', {
         fontSize: '28px',
         color: '#000',
         backgroundColor: '#fff',
@@ -66,9 +100,9 @@
       });
       dialogText.setVisible(false);
 
-      //===========================
-      // 3) クリックで会話表示
-      //===========================
+      //-----------------------------------
+      // (E) 画像クリック時の挙動
+      //-----------------------------------
       mofutanSprite.on('pointerdown', () => {
         if (!dialogVisible) {
           dialogText.setText('もふたんだよ、よろしくね！');
@@ -81,15 +115,21 @@
       });
     }
 
-    //===========================================
-    // 3) update()：毎フレーム呼ばれる処理
-    //    (キャラをゆらゆら揺らす)
-    //===========================================
+    //=======================
+    // 3. 毎フレームの処理
+    //=======================
     function update(time, delta) {
       if (mofutanSprite) {
-        // キャラを上下に揺らす
-        mofutanSprite.y = 300 + Math.sin(time * 0.005) * 10;
-        // ほんの少し角度を揺らす
+        // ゆらゆら揺らす動き：位置や角度をSine波で変化させる
+        // 画像の中心(0.5,0.5)基準で揺れるので、
+        //   画像左上にセットした座標 + 中心補正が合わさって
+        //   画面中央付近でふわふわする動きになります。
+
+        // y座標の調整(±10ピクセル)
+        // 数字を変えると揺れ幅やスピードが変わります
+        mofutanSprite.y = mofutanSprite.y + Math.sin(time * 0.005) * 0.3;
+
+        // 角度を -3°～+3°あたりで振動
         mofutanSprite.angle = Math.sin(time * 0.01) * 3;
       }
     }
