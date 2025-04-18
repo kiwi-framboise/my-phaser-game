@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>My Phaser Game</title>
+  <!-- Phaser CDN（Phaser 3本体） -->
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js"></script>
+  <style>
+    body { margin: 0; padding: 0; }
+    #game-container { width: 100%; height: 100vh; }
+  </style>
+</head>
+<body>
+  <!-- Phaserが表示される場所 -->
+  <div id="game-container"></div>
+
+  <script>
+    // Phaserの設定(画面サイズ, どこに表示するかなど)
+    const config = {
+      type: Phaser.AUTO,
+      width: 800,
+      height: 600,
+      parent: 'game-container',
+      scene: {
+        preload: preload,
+        create: create,
+        update: update
+      }
+    };
+
+    // ゲームインスタンス作成
+    const game = new Phaser.Game(config);
+
+    // 画像などの事前読み込み
+    function preload() {
+      // 好きな画像を読み込めますが、とりあえずPhaser公式のロゴを読み込みます
+      this.load.image('logo', 'https://labs.phaser.io/assets/sprites/phaser3-logo.png');
+    }
+
+    // シーン生成時に呼ばれる関数
+    function create() {
+      // 画像を画面中央に配置 (width/2, height/2)
+      const logo = this.add.image(400, 300, 'logo');
+      logo.setScale(0.5); // 画像サイズを半分に縮小
+
+      // 文字を表示
+      this.add.text(20, 20, 'Hello Phaser!', {
+        fontSize: '32px',
+        color: '#ffffff'
+      });
+    }
+
+    // 毎フレーム呼ばれる更新処理 (60回/秒など)
+    function update() {
+      // 今回は何もしない
+    }
+  </script>
+</body>
+</html>
