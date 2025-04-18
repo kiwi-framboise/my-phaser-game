@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>My Phaser Game</title>
+  <title>Mofutan Game</title>
   <!-- Phaser CDN（Phaser 3本体） -->
   <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js"></script>
   <style>
@@ -11,11 +11,10 @@
   </style>
 </head>
 <body>
-  <!-- Phaserが表示される場所 -->
   <div id="game-container"></div>
 
   <script>
-    // Phaserの設定(画面サイズ, どこに表示するかなど)
+    // Phaserゲーム全体の設定
     const config = {
       type: Phaser.AUTO,
       width: 800,
@@ -28,31 +27,71 @@
       }
     };
 
-    // ゲームインスタンス作成
+    // ゲームインスタンスを作成
     const game = new Phaser.Game(config);
 
-    // 画像などの事前読み込み
+    let mofutanSprite;    // キャラクター用
+    let dialogText;       // 会話テキスト用
+    let dialogVisible = false; // テキストが表示中かどうか
+
+    //========================
+    //  1) 画像を読み込む
+    //========================
     function preload() {
-      // 好きな画像を読み込めますが、とりあえずPhaser公式のロゴを読み込みます
-      this.load.image('logo', 'https://labs.phaser.io/assets/sprites/phaser3-logo.png');
+      // 'mofutan' = キー名, 'assets/mofutan.png' = 実際のパス
+      this.load.image('mofutan', 'assets/mofutan.png');
     }
 
-    // シーン生成時に呼ばれる関数
+    //===================================
+    // 2) create()：シーンが生成される
+    //===================================
     function create() {
-      // 画像を画面中央に配置 (width/2, height/2)
-      const logo = this.add.image(400, 300, 'logo');
-      logo.setScale(0.5); // 画像サイズを半分に縮小
+      // 背景色 (お好みで変更可能)
+      this.cameras.main.setBackgroundColor('#fceacd');
 
-      // 文字を表示
-      this.add.text(20, 20, 'Hello Phaser!', {
-        fontSize: '32px',
-        color: '#ffffff'
+      // キャラを中央に配置し、スケールを少し小さく
+      mofutanSprite = this.add.image(400, 300, 'mofutan').setScale(0.8);
+
+      // クリック(タップ)判定をONにする
+      mofutanSprite.setInteractive();
+
+      //====================================
+      // 会話テキスト(最初は非表示)
+      //====================================
+      dialogText = this.add.text(100, 500, '', {
+        fontSize: '28px',
+        color: '#000',
+        backgroundColor: '#fff',
+        padding: { x: 10, y: 5 }
+      });
+      dialogText.setVisible(false);
+
+      //===========================
+      // 3) クリックで会話表示
+      //===========================
+      mofutanSprite.on('pointerdown', () => {
+        if (!dialogVisible) {
+          dialogText.setText('もふたんだよ、よろしくね！');
+          dialogText.setVisible(true);
+          dialogVisible = true;
+        } else {
+          dialogText.setVisible(false);
+          dialogVisible = false;
+        }
       });
     }
 
-    // 毎フレーム呼ばれる更新処理 (60回/秒など)
-    function update() {
-      // 今回は何もしない
+    //===========================================
+    // 3) update()：毎フレーム呼ばれる処理
+    //    (キャラをゆらゆら揺らす)
+    //===========================================
+    function update(time, delta) {
+      if (mofutanSprite) {
+        // キャラを上下に揺らす
+        mofutanSprite.y = 300 + Math.sin(time * 0.005) * 10;
+        // ほんの少し角度を揺らす
+        mofutanSprite.angle = Math.sin(time * 0.01) * 3;
+      }
     }
   </script>
 </body>
